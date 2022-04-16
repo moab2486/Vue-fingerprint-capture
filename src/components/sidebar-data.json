@@ -1,0 +1,77 @@
+[
+    {
+        "id": 1,
+        "name": "Country of Residence",
+        "data": [
+            {
+                "id": 1,
+                "name": "Sweden",
+                "value": "56"
+            },
+            {
+                "id": 2,
+                "name": "USA",
+                "value": "106"
+            },
+            {
+                "id": 3,
+                "name": "Austrailia",
+                "value": "12"
+            },
+            {
+                "id": 4,
+                "name": "United Kingdom",
+                "value": "8"
+            }
+        ]
+    },
+
+    {
+        "id": 2,
+        "name": "Area of Expertise",
+        "data": [
+            {
+                "id": 1,
+                "name": "Creative Writing",
+                "value": "56"
+            },
+            {
+                "id": 2,
+                "name": "Civil Engineer",
+                "value": "106"
+            },
+            {
+                "id": 3,
+                "name": "Fashion Design",
+                "value": "12"
+            },
+            {
+                "id": 4,
+                "name": "Project Development",
+                "value": "8"
+            }
+        ]
+    },
+
+    {
+        "id": 3,
+        "name": "Engagement Type",
+        "data": [
+            {
+                "id": 1,
+                "name": "Investor",
+                "value": "56"
+            },
+            {
+                "id": 2,
+                "name": "Consultant",
+                "value": "106"
+            },
+            {
+                "id": 3,
+                "name": "Mentors",
+                "value": "12"
+            }
+        ]
+    }
+]
