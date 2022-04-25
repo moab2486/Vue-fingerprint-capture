@@ -1,18 +1,19 @@
 <script>
-  import APP from './router/layout/main.vue'
+  import Home from './views/home.vue'
 
   export default {
-    components:{ APP }
+    components:{ Home }
   }
 </script>
 
 <template>
   <div id="app">
-    <APP />
+    <Home />
   </div>
 </template>
 
 <style>
   @import '@/design/base.css';
   @import '@/design/style.css';
+  @import '@/design/custom.css';
 </style>
