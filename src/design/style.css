@@ -1,6 +1,13 @@
 #app {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   font-weight: normal;
   background: rgb(231, 248, 221);
+}
+
+#main{
+  display: flex;
+  justify-content: center;
+  position: relative;
+  top: 15%;
 }

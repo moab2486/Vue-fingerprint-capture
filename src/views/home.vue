@@ -10,6 +10,6 @@
 
 <template>
     <div class="container">
-        <CreateEnrollment />
+        <CreateEnrollment  />
     </div>
 </template>

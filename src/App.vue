@@ -8,12 +8,11 @@
 
 <template>
   <div id="app">
-    <Home />
+    <Home  id="main"/>
   </div>
 </template>
 
 <style>
   @import '@/design/base.css';
   @import '@/design/style.css';
-  @import '@/design/custom.css';
 </style>
