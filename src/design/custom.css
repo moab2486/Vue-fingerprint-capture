@@ -150,21 +150,30 @@ body {
     background-size: cover;
 }
 
-.icon-indexfinger-not-enrolled{
-    background-image: url("./res/svg/indexfinger_not_enrolled.svg");
+.icon-thumbfinger-not-enrolled{
+    background-image: url("./res/icons/thumbfinger_not_enrolled.png");
 }
 
-.icon-indexfinger-enrolled{
-    background-image: url("./res/svg/indexfinger_enrolled.svg");
+.icon-indexfinger-not-enrolled{
+    background-image: url("./res/svg/indexfinger_not_enrolled.svg");
 }
 
 .icon-middlefinger-not-enrolled{
     background-image: url("./res/svg/middlefinger_not_enrolled.svg");
 }
 
-.icon-middlefinger-enrolled{
-    background-image: url("./res/svg/middlefinger_enrolled.svg");
+.icon-ringfinger-not-enrolled{
+    background-image: url("./res/icons/ringfinger_not_enrolled.png");
 }
+
+.icon-littlefinger-not-enrolled{
+    background-image: url("./res/icons/littlefinger_not_enrrolled.png");
+}
+
+.icon-enrolled{
+    background-image: url("./res/icons/fingerprint_icon.png");
+}
+
 
 .capture-indexfinger{
     animation-duration: 500ms;

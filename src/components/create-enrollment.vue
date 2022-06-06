@@ -1,6 +1,5 @@
 <script>
-    import { setReaderSelectField, readyForEnroll } from "./../assets/util/utilities.js";
-
+    import { beginEnrollment, beginCapture, clearCapture, serverEnroll, beginIdentification, captureForIdentify, serverIdentify } from "./../assets/js/custom.js";
     export default {
         data(){
             return {
@@ -8,206 +7,214 @@
         },
 
         mounted(){
-            this.beginEnrollment();
+            this.beginEnrollments();
         },
 
         methods:{
-            beginEnrollment(){
-                setReaderSelectField("enrollReaderSelect");
-                myReader.setStatusField("enrollmentStatusField");
-            }, 
-
-            beginCapture(){
-                if(!readyForEnroll()){
-                    return;
-                }
-                
-                myReader.currentHand = new Hand();
-                storeUserID();
-                myReader.reader.startCapture();
-                showNextNotEnrolledItem();
+            beginEnrollments(){
+                beginEnrollment()
             },
 
-            getNextNotEnrolledID(){
-                let indexFingers = document.getElementById("indexFingers");
-            
-                let enrollUserId = document.getElementById("userID").value;
-            
-                let indexFingerElement = findElementNotEnrolled(indexFingers);
-            
-                if (indexFingerElement !== null && enrollUserId !== ""){
-                    return indexFingerElement.id;
-                }
-
-                return "";
+            beginCaptures(){
+                beginCapture()
             },
 
-            showNextNotEnrolledItem(){
-                let nextElementID = getNextNotEnrolledID();
-                let markup = null;
-                if(nextElementID.startsWith("index")){
-                    markup = `<span class="icon capture-indexfinger" title="not_enrolled"></span>`;
-                }
-            
-                if(nextElementID !== "" && markup){
-                    let nextElement = document.getElementById(nextElementID);
-                    nextElement.innerHTML = markup;
-                }
+            clearCaptures(){
+                clearCapture()
             },
 
-            findElementNotEnrolled(element){
-                if (element){
-                    for(let fingerElement of element.children){
-                        if(fingerElement.firstElementChild.title === "not_enrolled"){
-                            return fingerElement;
-                        }
-                    }
-                }
-            
-                return null;
+            serverEnrolls(){
+                serverEnroll()
             },
 
-            storeUserID(){
-                let enrollUserId = document.getElementById("userID").value;
-                myReader.currentHand.id = enrollUserId;
+            beginIdentifications(){
+                beginIdentification()
             },
 
-            showSampleCaptured(){
-                let nextElementID = getNextNotEnrolledID();
-                let markup = null;
-                if(nextElementID.startsWith("index")){
-                    markup = `<span class="icon icon-indexfinger-enrolled" title="enrolled"></span>`;
-                }
-            
-                if(nextElementID !== "" && markup){
-                    let nextElement = document.getElementById(nextElementID);
-                    nextElement.innerHTML = markup;
-                }
+            captureForIdentifys(){
+                captureForIdentify()
             },
 
-            storeSample(sample){
-                let samples = JSON.parse(sample.samples);
-                let sampleData = samples[0].Data;
-            
-                let nextElementID = getNextNotEnrolledID();
-            
-                if(nextElementID.startsWith("index")){
-                    myReader.currentHand.addIndexFingerSample(sampleData);
-                    showSampleCaptured();
-                    showNextNotEnrolledItem();
-                    return;
-                }
-            },
-
-            clearCapture(){
-                this.clearInputs();
-                this.clearPrints();
-                this.clearHand();
-                myReader.reader.stopCapture();
-            },
- 
-            clearInputs(){
-                document.getElementById("userID").value = "";
-            },
- 
-            clearPrints(){
-                let indexFingers = document.getElementById("indexFingers");
-            
-                if (indexFingers){
-                    for(let indexfingerElement of indexFingers.children){
-                        indexfingerElement.innerHTML = `<span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>`;
-                    }
-                }
-            },
-
-            clearHand(){
-                myReader.currentHand = null;
-            },
-
-            serverEnroll(){
-                if(!readyForEnroll()){
-                    return;
-                }
-            
-                let data = myReader.currentHand.generateFullHand();
-                let successMessage = "Enrollment Successful!";
-                let failedMessage = "Enrollment Failed!";
-                let payload = `data=${data}`;
-            
-                let xhttp = new XMLHttpRequest();
-            
-                xhttp.onreadystatechange = function(){
-                    if(this.readyState === 4 && this.status === 200){
-                        if(this.responseText === "success"){
-                            showMessage(successMessage, "success");
-                        }
-                        else{
-                            showMessage(`${failedMessage} ${this.responseText}`);
-                        }
-                    }
-                };
-            
-                xhttp.open("POST", "/api/v1/enroll", true);
-                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xhttp.send(payload);
+            serverIdentifys(){
+                serverIdentify()
             }
-       }
+        }
     }
 </script>
 
 <template>
     <div class="card p-3">
-        <div class="card-body">
-            <div class="modal-header">
-                <h3 class="modal-title my-text my-pri-color" id="createEnrollmentTitle">Finger print capture / verication</h3>
+        <div class="container">
+            <div id="controls" class="row justify-content-center mx-5 mx-sm-0 mx-lg-5">
+                <div class="col-sm mb-2 ml-sm-5">
+                    <button id="createEnrollmentButton" type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#createEnrollment" @click="beginEnrollments">Create Enrollment</button>
+                </div>
+                <div class="col-sm mb-2 mr-sm-5">
+                    <button id="verifyIdentityButton" type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#verifyIdentity" @click="beginIdentifications">Verify Identity</button>
+                </div>
             </div>
-            <div class="modal-body">
-                <form action="#" onsubmit="return false">
-                    <input type="hidden" id="userID"/>
-                    <div id="enrollmentStatusField" class="text-center">
-                        <!--Enrollment Status will be displayed Here-->
-                    </div>
-                    <div class="form-row mt-3">
-                        <div class="col mb-3 mb-md-0 text-center">
-                            <label for="enrollReaderSelect" class="my-text7 my-pri-color">Choose Fingerprint Scanner</label>
-                            <select name="readerSelect" id="enrollReaderSelect" class="form-control" @click="beginEnrollment">
-                                <!-- <option selected>Select Fingerprint Scanner</option> -->
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row mt-1">
-                        <div class="col text-center">
-                            <p class="my-text7 my-pri-color mt-3">Capture Index Finger</p>
-                        </div>
-                    </div>
-                    <div id="indexFingers" class="row justify-content-center">
-                        <div id="indexfinger1" class="col mb-3 mb-md-0 text-center">
-                            <span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex m-3 mt-md-5 justify-content-around"> 
-                        <div class="">
-                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="beginCapture">Start Capture</button>
-                        </div>
-                        <div class="">
-                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="serverEnroll">Save / verify</button>
-                        </div>
-                        <div class="">
-                            <button class="btn btn-secondary btn-outline-warning btn-block my-text-button py-1 border-0" type="button" @click="clearCapture">Clear</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+        </div>
 
-            <!-- <div class="modal-footer">
-                <div class="form-row">
-                       <button class="btn btn-secondary my-text8 btn-outline-danger border-0" type="button" data-dismiss="modal" @click="closeModal">Close</button>
-                     <div class="col">
+        <div class="card-body">
+            <section>
+                <!--Create Enrolment Section-->
+                <div class="modal fade" id="createEnrollment" data-backdrop="static" tabindex="-1" aria-labelledby="createEnrollmentTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title my-text my-pri-color" id="createEnrollmentTitle">Create Enrollment</h3>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="clearCaptures()">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form action="#" onsubmit="return false">
+                                    <div id="enrollmentStatusField" class="text-center">
+                                        <!--Enrollment Status will be displayed Here-->
+                                    </div>
+                                    <div class="form-row mt-3">
+                                        <div class="col mb-3 mb-md-0 text-center">
+                                            <label for="enrollReaderSelect" class="my-text7 my-pri-color">Choose Fingerprint Reader</label>
+                                            <select name="readerSelect" id="enrollReaderSelect" class="form-control" @change="beginEnrollments()">
+                                                <option selected>Select Fingerprint Reader</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mt-2">
+                                        <div class="col mb-3 mb-md-0 text-center">
+                                            <label for="userID" class="my-text7 my-pri-color">Specify UserID</label>
+                                            <input id="userID" type="text" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mt-1">
+                                        <div class="col text-center">
+                                            <p class="my-text7 my-pri-color mt-3">Capture Finger</p>
+                                        </div>
+                                    </div>
+                                    <div class="form-row justify-content-center d-flex">
+                                        <div id="thumbFingers" class="form-row justify-content-center">
+                                            <div id="thumbFinger1" class="col mb-3 mb-md-0 text-center">
+                                                <span class="icon icon-thumbfinger-not-enrolled" title="not_enrolled"></span>
+                                            </div>
+                                        </div>
+
+                                        <div id="indexFingers" class="form-row justify-content-center">
+                                            <div id="indexfinger1" class="col mb-3 mb-md-0 text-center">
+                                                <span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>
+                                            </div>
+                                        </div>
+
+                                        <div id="middleFingers" class="form-row justify-content-center">
+                                            <div id="middleFinger1" class="col mb-3 mb-md-0 text-center">
+                                                <span class="icon icon-middlefinger-not-enrolled" title="not_enrolled"></span>
+                                            </div>
+                                        </div>
+
+                                        <div id="ringFingers" class="form-row justify-content-center">
+                                            <div id="ringFinger1" class="col mb-3 mb-md-0 text-center">
+                                                <span class="icon icon-ringfinger-not-enrolled" title="not_enrolled"></span>
+                                            </div>
+                                        </div>
+
+                                        <div id="littleFingers" class="form-row justify-content-center">
+                                            <div id="littleFinger1" class="col mb-3 mb-md-0 text-center">
+                                                <span class="icon icon-littlefinger-not-enrolled" title="not_enrolled"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row m-3 mt-md-5 justify-content-center">
+                                        <div class="col-4">
+                                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="beginCaptures()">Start Capture</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="serverEnrolls">Enroll</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-secondary btn-outline-warning btn-block my-text-button py-1 border-0" type="button" @click="clearCaptures()">Clear</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="form-row">
+                                    <div class="col">
+                                        <button class="btn btn-secondary my-text8 btn-outline-danger border-0" type="button" data-dismiss="modal" @click="clearCaptures()">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div> -->
+            </section>
+
+            <section>
+                <!--Verify Identity Section-->
+                <div id="verifyIdentity" class="modal fade" data-backdrop="static" tabindex="-1" aria-labelledby="verifyIdentityTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title my-text my-pri-color" id="verifyIdentityTitle">Identity Verification</h3>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="clearCaptures">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form action="#" onsubmit="return false">
+                                    <div id="verifyIdentityStatusField" class="text-center">
+                                        <!--verifyIdentity Status will be displayed Here-->
+                                    </div>
+                                    <div class="form-row mt-3">
+                                        <div class="col mb-3 mb-md-0 text-center">
+                                            <label for="verifyReaderSelect" class="my-text7 my-pri-color">Choose Fingerprint Reader</label>
+                                            <select name="readerSelect" id="verifyReaderSelect" class="form-control" @change="beginIdentifications">
+                                                <option selected>Select Fingerprint Reader</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mt-4">
+                                        <div class="col mb-md-0 text-center">
+                                            <label for="userIDVerify" class="my-text7 my-pri-color m-0">Specify UserID</label>
+                                            <input type="text" id="userIDVerify" class="form-control mt-1" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mt-3">
+                                        <div class="col text-center">
+                                            <p class="my-text7 my-pri-color mt-1">Capture Verification Finger</p>
+                                        </div>
+                                    </div>
+                                    <div id="verificationFingers" class="form-row justify-content-center">
+                                        <div id="verificationFinger" class="col mb-md-0 text-center">
+                                            <span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mt-3" id="userDetails">
+                                        <!--this is where user details will be displayed-->
+                                    </div>
+                                    <div class="form-row m-3 mt-md-5 justify-content-center">
+                                        <div class="col-4">
+                                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="captureForIdentifys">Start Capture</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-primary btn-block my-sec-bg my-text-button py-1" type="submit" @click="serverIdentifys">Identify</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-secondary btn-outline-warning btn-block my-text-button py-1 border-0" type="button" @click="clearCapture()">Clear</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="form-row">
+                                    <div class="col">
+                                        <button class="btn btn-secondary my-text8 btn-outline-danger border-0" type="button" data-dismiss="modal" @click="clearCapture()">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </template>

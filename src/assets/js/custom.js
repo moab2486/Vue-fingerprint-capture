@@ -124,21 +124,339 @@ class Reader{
 class Hand{
     constructor(){
         this.id = 0;
+        this.thumb_finger = [];
         this.index_finger = [];
+        this.middle_finger = [];
+        this.ring_finger = [];
+        this.little_finger = [];
+    }
+
+    addThumbFingerSample(sample){
+        this.thumb_finger.push(sample);
     }
 
     addIndexFingerSample(sample){
         this.index_finger.push(sample);
     }
 
+    addMiddleFingerSample(sample){
+        this.middle_finger.push(sample);
+    }
+
+    addRingFingerSample(sample){
+        this.ring_finger.push(sample);
+    }
+
+    addLittleFingerSample(sample){
+        this.little_finger.push(sample);
+    }
+
     generateFullHand(){
         let id = this.id;
+        let thumb_finger = this.thumb_finger;
         let index_finger = this.index_finger;
-        return JSON.stringify({id, index_finger});
+        let middle_finger = this.middle_finger;
+        let ring_finger = this.ring_finger;
+        let little_finger = this.little_finger;
+        return JSON.stringify({id, thumb_finger, index_finger, middle_finger, ring_finger, little_finger});
     }
 }
- 
+
 let myReader = new Reader();
+
+function beginEnrollment(){
+    setReaderSelectField("enrollReaderSelect");
+    myReader.setStatusField("enrollmentStatusField");
+}
+
+function beginIdentification(){
+    setReaderSelectField("verifyReaderSelect");
+    myReader.setStatusField("verifyIdentityStatusField");
+}
+
+function setReaderSelectField(fieldName){
+    myReader.readerSelectField(fieldName);
+    myReader.displayReader();
+}
+
+function beginCapture(){
+    if(!readyForEnroll()){
+        return;
+    }
+    myReader.currentHand = new Hand();
+    storeUserID();  // for current user in Hand instance
+    myReader.reader.startCapture();
+    showNextNotEnrolledItem();
+}
+
+function captureForIdentify() {
+    if(!readyForIdentify()){
+        return;
+    }
+    myReader.currentHand = new Hand();
+    storeUserID();
+    myReader.reader.startCapture();
+    showNextNotEnrolledItem();
+}
+
+/**
+ * @returns {boolean}
+ */
+function readyForEnroll(){
+    return ((document.getElementById("userID").value !== "") && (document.getElementById("enrollReaderSelect").value !== "Select Fingerprint Reader"));
+}
+
+/**
+* @returns {boolean}
+*/
+function readyForIdentify() {
+    return ((document.getElementById("userIDVerify").value !== "") && (document.getElementById("verifyReaderSelect").value !== "Select Fingerprint Reader"));
+}
+
+function clearCapture(){
+    clearInputs();
+    clearPrints();
+    clearHand();
+    myReader.reader.stopCapture();
+    document.getElementById("userDetails").innerHTML = "";
+}
+
+function clearInputs(){
+    document.getElementById("userID").value = "";
+    document.getElementById("userIDVerify").value = "";
+    //let id = myReader.selectFieldID;
+    //let selectField = document.getElementById(id);
+    //selectField.innerHTML = `<option>Select Fingerprint Reader</option>`;
+}
+
+function clearPrints(){
+    let indexFingers = document.getElementById("indexFingers");
+    let middleFingers = document.getElementById("middleFingers");
+    let verifyFingers = document.getElementById("verificationFingers");
+
+    if (indexFingers){
+        for(let indexfingerElement of indexFingers.children){
+            indexfingers.innerHTML = `<span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>`;
+        }
+    }
+
+    if (middleFingers){
+        for(let middlefingerElement of middleFingers.children){
+            middlefingerElement.innerHTML = `<span class="icon icon-middlefinger-not-enrolled" title="not_enrolled"></span>`;
+        }
+    }
+
+    if (verifyFingers){
+        for(let finger of verifyFingers.children){
+            finger.innerHTML = `<span class="icon icon-indexfinger-not-enrolled" title="not_enrolled"></span>`;
+        }
+    }
+}
+
+function clearHand(){
+    myReader.currentHand = null;
+}
+
+function showSampleCaptured(){
+    let nextElementID = getNextNotEnrolledID();
+    let markup =  `<span class="icon icon-enrolled" title="enrolled"></span>`;
+
+    if(nextElementID !== "" && markup){
+        let nextElement = document.getElementById(nextElementID);
+        nextElement.innerHTML = markup;
+    }
+}
+
+function showNextNotEnrolledItem(){
+    let nextElementID = getNextNotEnrolledID();
+    let markup = null;
+    if(nextElementID.startsWith("thumb") || nextElementID.startsWith("index") || nextElementID.startsWith("middle") || nextElementID.startsWith("ring") || nextElementID.startsWith("little") || nextElementID.startsWith("verification")){
+        markup = `<span class="icon capture-indexfinger" title="not_enrolled"></span>`;
+    }
+
+    if(nextElementID !== "" && markup){
+        let nextElement = document.getElementById(nextElementID);
+        nextElement.innerHTML = markup;
+    }
+}
+
+/**
+ * @returns {string}
+ */
+function getNextNotEnrolledID(){
+    let thumbFingers = document.getElementById("thumbFingers");
+    let indexFingers = document.getElementById("indexFingers");
+    let middleFingers = document.getElementById("middleFingers");
+    let ringFingers = document.getElementById("ringFingers");
+    let littleFingers = document.getElementById("littleFingers");
+    let verifyFingers = document.getElementById("verificationFingers");
+
+    let enrollUserId = document.getElementById("userID").value;
+    let verifyUserId = document.getElementById("userIDVerify").value;
+
+    let thumbFingerElement = findElementNotEnrolled(thumbFingers);
+    let indexFingerElement = findElementNotEnrolled(indexFingers);
+    let middleFingerElement = findElementNotEnrolled(middleFingers);
+    let ringFingerElement = findElementNotEnrolled(ringFingers);
+    let littleFingerElement = findElementNotEnrolled(littleFingers);
+    let verifyFingerElement = findElementNotEnrolled(verifyFingers);
+
+    //assumption is that we will always start with
+    //indexfinger and run down to middlefinger
+    if (thumbFingerElement !== null && enrollUserId !== ""){
+        return thumbFingerElement.id;
+    }
+
+    if (indexFingerElement !== null && enrollUserId !== ""){
+        return indexFingerElement.id;
+    }
+
+    if (middleFingerElement !== null && enrollUserId !== ""){
+        return middleFingerElement.id;
+    }
+
+    if (ringFingerElement !== null && enrollUserId !== ""){
+        return ringFingerElement.id;
+    }
+
+    if (littleFingerElement !== null && enrollUserId !== ""){
+        return littleFingerElement.id;
+    }
+
+    if (verifyFingerElement !== null && verifyUserId !== ""){
+        return verifyFingerElement.id;
+    }
+
+    return "";
+}
+
+/**
+ * 
+ * @param {Element} element
+ * @returns {Element}
+ */
+function findElementNotEnrolled(element){
+    if (element){
+        for(let fingerElement of element.children){
+            if(fingerElement.firstElementChild.title === "not_enrolled"){
+                return fingerElement;
+            }
+        }
+    }
+
+    return null;
+}
+
+function storeUserID(){
+    let enrollUserId = document.getElementById("userID").value;
+    let identifyUserId = document.getElementById("userIDVerify").value;
+    myReader.currentHand.id = enrollUserId !== "" ? enrollUserId : identifyUserId;
+}
+
+function storeSample(sample){
+    let samples = JSON.parse(sample.samples);
+    let sampleData = samples[0].Data;
+
+    let nextElementID = getNextNotEnrolledID();
+
+    if(nextElementID.startsWith("thumb")){
+        myReader.currentHand.addThumbFingerSample(sampleData);
+        showSampleCaptured();
+        showNextNotEnrolledItem();
+    }
+
+    if(nextElementID.startsWith("index") || nextElementID.startsWith("verification")){
+        myReader.currentHand.addIndexFingerSample(sampleData);
+        showSampleCaptured();
+        showNextNotEnrolledItem();
+        return;
+    }
+
+    if(nextElementID.startsWith("middle")){
+        myReader.currentHand.addMiddleFingerSample(sampleData);
+        showSampleCaptured();
+        showNextNotEnrolledItem();
+    }
+    if(nextElementID.startsWith("ring")){
+        myReader.currentHand.addRingFingerSample(sampleData);
+        showSampleCaptured();
+        showNextNotEnrolledItem();
+    }
+
+    if(nextElementID.startsWith("little")){
+        myReader.currentHand.addLittleFingerSample(sampleData);
+        showSampleCaptured();
+        showNextNotEnrolledItem();
+    }
+}
+
+function serverEnroll(){
+    if(!readyForEnroll()){
+        return;
+    }
+
+    let data = myReader.currentHand.generateFullHand();
+    let successMessage = "Enrollment Successful!";
+    let failedMessage = "Enrollment Failed!";
+    let payload = `data=${data}`;
+
+    let xhttp = new XMLHttpRequest();
+
+    xhttp.onreadystatechange = function(){
+        if(this.readyState === 4 && this.status === 200){
+            if(this.responseText === "success"){
+                showMessage(successMessage, "success");
+            }
+            else{
+                showMessage(`${failedMessage} ${this.responseText}`);
+            }
+        }
+    };
+
+    xhttp.open("POST", "/src/core/enroll.php", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send(payload);
+}
+
+function serverIdentify() {
+    if(!readyForIdentify()){
+        return;
+    }
+
+    let data = myReader.currentHand.generateFullHand();
+    let detailElement = document.getElementById("userDetails");
+    let successMessage = "Identification Successful!";
+    let failedMessage = "Identification Failed!. Try again";
+    let payload = `data=${data}`;
+
+    let xhttp = new XMLHttpRequest();
+
+    xhttp.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 200){
+            if(this.responseText !== null && this.responseText !== ""){
+                let response = JSON.parse(this.responseText);
+                if(response !== "failed" && response !== null){
+                    showMessage(successMessage, "success");
+                    detailElement.innerHTML = `<div class="col text-center">
+                                <label for="fullname" class="my-text7 my-pri-color">Fullname</label>
+                                <input type="text" id="fullname" class="form-control" value="${response[0].fullname}">
+                            </div>
+                            <div class="col text-center">
+                                <label for="email" class="my-text7 my-pri-color">Email</label>
+                                <input type="text" id="email" class="form-control" value="${response[0].username}">
+                            </div>`;
+                }
+                else {
+                    showMessage(failedMessage);
+                }
+            }
+        }
+    };
+
+    xhttp.open("POST", "/src/core/verify.php", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send(payload);
+}
  
 function showMessage(message, message_type="error"){
     let types = new Map();
@@ -149,4 +467,6 @@ function showMessage(message, message_type="error"){
         let statusField = document.getElementById(statusFieldID);
         statusField.innerHTML = `<p class="my-text7 my-pri-color my-3 ${types.get(message_type)} font-weight-bold">${message}</p>`;
     }
-}
+};
+
+export {beginEnrollment, beginCapture, clearCapture, serverEnroll, beginIdentification, captureForIdentify, serverIdentify}
